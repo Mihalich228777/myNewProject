@@ -29,15 +29,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         btnLogOut = findViewById(R.id.btnLogOut);
         mainElemMain = findViewById(R.id.mainElemMain);
-
-        User user = new User();
-
-        try {
-            throw new Exception(user.getUserName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        
 
         btnLogOut.setOnClickListener(new View.OnClickListener() {
                 @Override
