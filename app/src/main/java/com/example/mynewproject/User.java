@@ -26,6 +26,10 @@ public class User {
         fStore = FirebaseFirestore.getInstance();
         this.Uid = fAuth.getCurrentUser().getUid();
         DocumentReference documentReference = fStore.collection("users").document(Uid);
+
+
+
+        //как доставать данные из бд без ивент лисенера
         documentReference.addSnapshotListener(new EventListener<DocumentSnapshot>() {
             public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
 
@@ -39,6 +43,8 @@ public class User {
 
             } //как исправить ошибку
         });
+
+
 
     }
 
