@@ -1,11 +1,17 @@
 package com.example.mynewproject;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.fragment.app.FragmentManager;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -22,8 +28,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +43,7 @@ import java.util.Map;
 
 public class Register extends AppCompatActivity {
 
+    private static final String TAG = "myNewTag";
     Button registrBtn;
     ConstraintLayout mainElemReg;
     TextView btnReplaceToLogin;
@@ -54,10 +67,7 @@ public class Register extends AppCompatActivity {
         fAuth = FirebaseAuth.getInstance();
         fStore = FirebaseFirestore.getInstance();
 
-        if(fAuth.getCurrentUser() != null){
-            startActivity(new Intent(getApplicationContext(), MainActivity.class));
-            finish();
-        }
+        checkUserLog();
 
         registrBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -76,12 +86,39 @@ public class Register extends AppCompatActivity {
 
     }
 
-    private void registration(){
+    //метод вызываемый при загрузке программы
+    private void checkUserLog(){
+        if(fAuth.getCurrentUser() != null){
+            userID = fAuth.getCurrentUser().getUid();
+            DocumentReference ref = fStore.collection("users").document(userID);
+            ref.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    if(task.isSuccessful()) {
+                        DocumentSnapshot snapshot = task.getResult();
+                        if (snapshot.exists()) {
+                            String Name = snapshot.get("Full Name").toString();
+                            String Email = snapshot.get("Email").toString();
+                            String Type = snapshot.get("Type").toString();
+                            User.getUser().create(fAuth.getCurrentUser().getUid(), Name, Email, Type);
+                        } else {
+                            Log.d(TAG, "No such document");
+                        }
+                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        finish();
+                    }else{
+                        Log.d(TAG, "Error" + task.getException().getMessage());
+                    }
+                }
+            });
+        }
+    }
 
+
+    private void registration(){
         final EditText inputName = findViewById(R.id.inputNameReg);
         final EditText inputEmail = findViewById(R.id.inputEmailReg);
         final EditText inputPassword = findViewById(R.id.inputPasswordReg);
-
         if (TextUtils.isEmpty(inputName.getText().toString())){
             inputName.setError("Ввидите ваше имя");
             return;
@@ -94,35 +131,114 @@ public class Register extends AppCompatActivity {
             inputPassword.setError("Пароль должен быть длинее 6 символов");
             return;
         }
+        RadioButton accRBtn;
+        accRBtn = findViewById(rGroup.getCheckedRadioButtonId());
+        String Type = accRBtn.getText().toString();
+        String Email = inputEmail.getText().toString();
+        String Name = inputName.getText().toString();
+
+        createUser(Email, inputPassword.getText().toString(), Type, Name);
+
+    }
 
 
 
-
-
-        fAuth.createUserWithEmailAndPassword(inputEmail.getText().toString(), inputPassword.getText().toString()).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+    private void createUser(String Email, String Password, String Type, String Name){
+        fAuth.createUserWithEmailAndPassword(Email, Password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
-                    Snackbar.make(mainElemReg, "Регистрация завершенна", Snackbar.LENGTH_SHORT).show();
                     userID = fAuth.getCurrentUser().getUid();
-                    Map<String, Object> user = new HashMap<>();
-
-                    //находить занчение выбранной кнопки
-                    RadioButton accRBtn;
-                    accRBtn = findViewById(rGroup.getCheckedRadioButtonId());
-                    user.put("Type", accRBtn.getText());
-                    user.put("Email", inputEmail.getText().toString());
-                    user.put("Full Name", inputName.getText().toString());
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("Type", Type);
+                    userData.put("Email", Email);
+                    userData.put("Full Name", Name);
                     DocumentReference documentReference = fStore.collection("users").document(userID);
-                    documentReference.set(user).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    documentReference.set(userData)
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void unused) {
                             Log.d("Registration", "User created" + userID);
                         }
-                    });
-                    startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                    })
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {  //после завершения выполнения всех запросов к бд кидаем на новую активность + завершаем эту
+                                    User.getUser().create(fAuth.getCurrentUser().getUid(), Name, Email, Type);
+                                    if(Type.equals("Учитель")){
+                                        createAdmin();
+                                    }else{
+                                    Snackbar.make(mainElemReg, "Регистрация завершенна", Snackbar.LENGTH_SHORT).show();
+                                    changeAcrivity();
+                                    }
+                                }
+                            });
                 }else{
-                    Snackbar.make(mainElemReg, "Ошибка " + task.getException().getMessage(), Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(mainElemReg, "Ошибка " + task.getException().getMessage(), Snackbar.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+
+    private void createAdmin(){ //реализует дополнительные опции создания юзера для админа
+        final String[] nameOfGroup = new String[1];
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Введите название класса");
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+        builder.setPositiveButton("Зарегестрироваться", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                    nameOfGroup[0] = input.getText().toString();
+                    createGroup(User.getUser().getUID(), nameOfGroup[0]); //получаем класс юзер тк он был создан в предыдущем методе
+            }
+        });
+        builder.create().show();
+    }
+
+
+
+    private void changeAcrivity(){ //создан для того чтобы дожидаться занесения всех необходимых данных
+        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+        finish();
+    }
+
+
+
+    private void createGroup(String UID, String nameOfGroup) {//создание группы + проверка существание группы с такиже названием
+        if(nameOfGroup.equals("")){
+            Snackbar.make(mainElemReg, "Введите название группы", Snackbar.LENGTH_LONG).show();
+            fAuth.getCurrentUser().delete();
+            fStore.collection("users").document(UID).delete();
+            return;
+        }
+        fStore.collection("groups").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    if(document.getId().equals(nameOfGroup)){
+                        Snackbar.make(mainElemReg, "Группа с таким названием уже существует", Snackbar.LENGTH_LONG).show();
+                        fAuth.getCurrentUser().delete();
+                        fStore.collection("users").document(UID).delete();
+                    }else{
+                        DocumentReference documentReference = fStore.collection("groups").document(nameOfGroup);
+                        Map<String, Object> newGroup = new HashMap<>();
+                        newGroup.put("Name Of Group", nameOfGroup);
+                        newGroup.put("Admin", UID);
+                        documentReference.set(newGroup).addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                if(task.isSuccessful()){
+                                    Snackbar.make(mainElemReg, "Группа успешно созданна", Snackbar.LENGTH_SHORT).show();
+                                    changeAcrivity();
+                                }else{
+                                    Snackbar.make(mainElemReg, "Ошибка" + task.getException().getMessage(), Snackbar.LENGTH_LONG).show();
+                                }
+                            }
+                        });
+                    }
                 }
             }
         });

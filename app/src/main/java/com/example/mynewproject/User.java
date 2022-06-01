@@ -1,66 +1,54 @@
 package com.example.mynewproject;
 
-import android.annotation.SuppressLint;
-
-import androidx.annotation.Nullable;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 
 public class User {
+    private static User user;
+    private static String userName;
+    private static String UID;
+    private static String Email;
+    private static String Type;
+    private static String UserGroup;
+    public static synchronized User getUser(){
+        if(user == null){
+            user = new User();
+        }
+        return user;
+    }
 
-    private String Uid;
-    private String userName;
-    private String type;
-    private String email;
+    private User() {
 
+    }
 
-    FirebaseAuth fAuth;
-    FirebaseFirestore fStore;
-    public User() {
-        fAuth = FirebaseAuth.getInstance();
-        fStore = FirebaseFirestore.getInstance();
-        this.Uid = fAuth.getCurrentUser().getUid();
-        DocumentReference documentReference = fStore.collection("users").document(Uid);
-
-
-
-        //как доставать данные из бд без ивент лисенера
-        documentReference.addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-
-                try {
-                    throw new Exception(value.getString("Email"));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                userName = value.getString("Full Name");
-                type = value.getString("Type");
-
-            } //как исправить ошибку
-        });
-
-
-
+    public void create(String uid, String username, String email, String type){
+        UID = uid;
+        userName = username;
+        Email = email;
+        Type = type;
+    }
+    public void setUserGroup(String userGroup) {
+        UserGroup = userGroup;
     }
 
     public String getUserName() {
         return userName;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public String getUid() {
-        return Uid;
+    public String getUID() {
+        return UID;
     }
 
     public String getEmail() {
-        return email;
+        return Email;
     }
+
+    public String getType() {
+        return Type;
+    }
+
+    public String getUserGroup() {
+        return UserGroup;
+    }
+
+
 }
+
