@@ -22,6 +22,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -37,7 +38,7 @@ public class Chat extends AppCompatActivity {
     ConstraintLayout mainElem;
     EditText messageInput;
     int docId;
-
+    ListenerRegistration listener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +69,8 @@ public class Chat extends AppCompatActivity {
                 sendMsg(msg);
             }
         });
+
+
     }
 
 
@@ -106,8 +109,8 @@ public class Chat extends AppCompatActivity {
         });
     }
 
-    private void updateListener(){
-        fStore.collection("groups").document(User.getUser().getUserGroup()).collection("messages").addSnapshotListener(new EventListener<QuerySnapshot>() {
+    private void updateListener(){ //как сортировать данные по убыванию или возрастанию
+        listener =  fStore.collection("groups").document(User.getUser().getUserGroup()).collection("messages").addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                 textField.setText("");
@@ -117,7 +120,6 @@ public class Chat extends AppCompatActivity {
             }
         });
     }
-
 
 
 
@@ -139,6 +141,7 @@ public class Chat extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), Profile.class));
+                listener.remove();
                 finish();
             }
         });
@@ -146,6 +149,7 @@ public class Chat extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), Chat.class));
+                listener.remove();
                 finish();
             }
         });
@@ -153,6 +157,7 @@ public class Chat extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), Calendar.class));
+                listener.remove();
                 finish();
             }
         });
@@ -160,6 +165,7 @@ public class Chat extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), Estimates.class));
+                listener.remove();
                 finish();
             }
         });

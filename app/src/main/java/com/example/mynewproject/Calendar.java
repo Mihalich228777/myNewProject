@@ -46,7 +46,7 @@ public class Calendar extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendar);
         changeActivity();
-
+        dayOfWeek = "Monday";
         mainElem = findViewById(R.id.mainElem);
         fStore = FirebaseFirestore.getInstance();
         forAdmin = findViewById(R.id.forAdmin);
@@ -60,7 +60,6 @@ public class Calendar extends AppCompatActivity {
         forAdmin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 startAlertDilog();
             }
         });
@@ -109,6 +108,7 @@ public class Calendar extends AppCompatActivity {
             public void onComplete(@NonNull Task<Void> task) {
                 if(task.isSuccessful()){
                     Log.d("TAG", "baldej");
+                    showTable(dayOfWeek);
                 }else{
                     Snackbar.make(mainElem, "Ошибка" + task.getException().getMessage(), Snackbar.LENGTH_LONG).show();
                 }
@@ -121,7 +121,6 @@ public class Calendar extends AppCompatActivity {
 
         switch(view.getId()){
             case R.id.btnMonday:
-                Button btnM = findViewById(R.id.btnMonday);
                     dayOfWeek = "Monday";
                     showTable(dayOfWeek);
                     Log.d("TAG", dayOfWeek);
