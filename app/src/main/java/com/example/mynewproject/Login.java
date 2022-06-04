@@ -81,6 +81,7 @@ public class Login extends AppCompatActivity {
                             if(task.isSuccessful()){
                                 DocumentSnapshot document = task.getResult();
                                 User.getUser().create(fAuth.getCurrentUser().getUid(), document.get("Full Name").toString(), document.get("Email").toString(), document.get("Type").toString());
+                                User.getUser().setUserGroup(document.get("UserGroup").toString());
                                 startActivity(new Intent(getApplicationContext(), MainActivity.class));
                             }else{
                                 Snackbar.make(mainElemLog, "Ошибка " + task.getException().getMessage(), Snackbar.LENGTH_SHORT).show();

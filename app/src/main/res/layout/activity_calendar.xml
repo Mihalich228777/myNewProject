@@ -4,18 +4,124 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Calendar">
+    tools:context=".Calendar"
+    android:id="@+id/mainElem"
+    >
 
 
+    <LinearLayout
+        android:id="@+id/linearLayout4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/btnMonday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#B8B8B8"
+            android:onClick="switchDay"
+            android:text="Пн." />
+
+        <Button
+            android:id="@+id/btnTuesday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#B8B8B8"
+            android:onClick="switchDay"
+            android:text="Вт." />
+
+        <Button
+            android:id="@+id/btnWednesday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#B8B8B8"
+            android:onClick="switchDay"
+            android:text="Ср." />
+
+        <Button
+            android:id="@+id/btnThursday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#B8B8B8"
+            android:onClick="switchDay"
+            android:text="Чт." />
+
+        <Button
+            android:id="@+id/btnFriday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#B8B8B8"
+            android:onClick="switchDay"
+            android:text="Пт." />
+
+        <Button
+            android:id="@+id/btnSaturday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#B8B8B8"
+            android:onClick="switchDay"
+            android:text="Сб." />
+
+    </LinearLayout>
 
 
+    <LinearLayout
+        android:id="@+id/linearLayout6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout4">
 
+        <TextView
+            android:id="@+id/dayOfWeekField"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="24dp"
+            android:textStyle="bold" />
 
+        <Button
+            android:id="@+id/forAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginLeft="90dp"
+            android:backgroundTint="#3959FF"
+            android:text="Изменить"
+            android:textSize="12dp" />
 
+    </LinearLayout>
+<!--  #CCCCCC  -->
+    <LinearLayout
+        android:id="@+id/linLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="4dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/include"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout6">
 
-
-
-
+    </LinearLayout>
 
     <include
         android:id="@+id/include"
@@ -25,4 +131,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"></include>
+
+
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

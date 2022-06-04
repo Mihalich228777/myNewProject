@@ -100,11 +100,13 @@ public class Register extends AppCompatActivity {
                             String Name = snapshot.get("Full Name").toString();
                             String Email = snapshot.get("Email").toString();
                             String Type = snapshot.get("Type").toString();
+                            String UserGroup = snapshot.get("UserGroup").toString();
                             User.getUser().create(fAuth.getCurrentUser().getUid(), Name, Email, Type);
+                            User.getUser().setUserGroup(UserGroup);
                         } else {
                             Log.d(TAG, "No such document");
                         }
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        startActivity(new Intent(getApplicationContext(), Profile.class));
                         finish();
                     }else{
                         Log.d(TAG, "Error" + task.getException().getMessage());
@@ -136,7 +138,6 @@ public class Register extends AppCompatActivity {
         String Type = accRBtn.getText().toString();
         String Email = inputEmail.getText().toString();
         String Name = inputName.getText().toString();
-
         createUser(Email, inputPassword.getText().toString(), Type, Name);
 
     }
@@ -153,6 +154,7 @@ public class Register extends AppCompatActivity {
                     userData.put("Type", Type);
                     userData.put("Email", Email);
                     userData.put("Full Name", Name);
+                    userData.put("UserGroup", "");
                     DocumentReference documentReference = fStore.collection("users").document(userID);
                     documentReference.set(userData)
                             .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -184,15 +186,15 @@ public class Register extends AppCompatActivity {
     private void createAdmin(){ //реализует дополнительные опции создания юзера для админа
         final String[] nameOfGroup = new String[1];
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Введите название класса");
+        builder.setTitle("Введите название группы");
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
         builder.setPositiveButton("Зарегестрироваться", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                    nameOfGroup[0] = input.getText().toString();
-                    createGroup(User.getUser().getUID(), nameOfGroup[0]); //получаем класс юзер тк он был создан в предыдущем методе
+                nameOfGroup[0] = input.getText().toString();
+                createGroup(User.getUser().getUID(), nameOfGroup[0]); //получаем класс юзер тк он был создан в предыдущем методе
             }
         });
         builder.create().show();
@@ -222,23 +224,51 @@ public class Register extends AppCompatActivity {
                         Snackbar.make(mainElemReg, "Группа с таким названием уже существует", Snackbar.LENGTH_LONG).show();
                         fAuth.getCurrentUser().delete();
                         fStore.collection("users").document(UID).delete();
-                    }else{
-                        DocumentReference documentReference = fStore.collection("groups").document(nameOfGroup);
-                        Map<String, Object> newGroup = new HashMap<>();
-                        newGroup.put("Name Of Group", nameOfGroup);
-                        newGroup.put("Admin", UID);
-                        documentReference.set(newGroup).addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                if(task.isSuccessful()){
-                                    Snackbar.make(mainElemReg, "Группа успешно созданна", Snackbar.LENGTH_SHORT).show();
-                                    changeAcrivity();
-                                }else{
-                                    Snackbar.make(mainElemReg, "Ошибка" + task.getException().getMessage(), Snackbar.LENGTH_LONG).show();
-                                }
-                            }
-                        });
+                        return;
                     }
+                }
+                DocumentReference documentReference = fStore.collection("groups").document(nameOfGroup);
+                Map<String, Object> newGroup = new HashMap<>();
+                newGroup.put("Name Of Group", nameOfGroup);
+                documentReference.set(newGroup).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            Snackbar.make(mainElemReg, "Группа успешно созданна", Snackbar.LENGTH_SHORT).show();
+                            addUserToGroup(nameOfGroup);
+                        }else{
+                            Snackbar.make(mainElemReg, "Ошибка" + task.getException().getMessage(), Snackbar.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    private void addUserToGroup(String nameOfGroup){
+        DocumentReference userDoc = fStore.collection("users").document(User.getUser().getUID());
+        DocumentReference groupDoc = fStore.collection("groups").document(nameOfGroup).collection("groupUsers").document(User.getUser().getUID());
+        userDoc.update("UserGroup", nameOfGroup).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.isSuccessful()){
+                    Map<String, Object> userDataToGroup = new HashMap<>();
+                    userDataToGroup.put("UID", User.getUser().getUID());
+                    userDataToGroup.put("UserType", User.getUser().getType());
+                    groupDoc.set(userDataToGroup).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if(task.isSuccessful()){
+                                User.getUser().setUserGroup(nameOfGroup);
+                                changeAcrivity();
+                            }else{
+                                userDoc.update("UserGroup", "");
+                                Snackbar.make(mainElemReg, "Ошибка" + task.getException().getMessage(), Snackbar.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }else{
+                    Snackbar.make(mainElemReg, "Ошибка" + task.getException().getMessage(), Snackbar.LENGTH_SHORT).show();
                 }
             }
         });

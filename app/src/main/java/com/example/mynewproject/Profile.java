@@ -77,6 +77,7 @@ public class Profile extends AppCompatActivity {
                 FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(getApplicationContext(), Login.class));
                 User.getUser().create("", "", "", "");
+                User.getUser().setUserGroup("");
                 finish();
             }
         });
@@ -84,7 +85,7 @@ public class Profile extends AppCompatActivity {
 
     }
 
-    private void showUserData() {
+    private void showUserData() { //доделать что бы кнопка добавиться в группы была только тогда когда человек не в группе
         TextView userName = findViewById(R.id.userNameField);
         TextView email = findViewById(R.id.emailField);
         TextView type = findViewById(R.id.userTypeField);
@@ -93,12 +94,12 @@ public class Profile extends AppCompatActivity {
         userName.setText(User.getUser().getUserName());
         email.setText("Ваша почта: " + User.getUser().getEmail());
         type.setText("Тип учётной записи: " + User.getUser().getType());
-        group.setText(User.getUser().getUserGroup());
+        group.setText("Группа: " + User.getUser().getUserGroup());
     }
 
 
 
-    private void addUserToGroup(String nameOfGroup){ //не доделано
+    private void addUserToGroup(String nameOfGroup){
         FirebaseFirestore fStore; //Инициализируем здесь, тк этот метод будет включаться не всегда (для экономии паияти)
         fStore = FirebaseFirestore.getInstance();
         fStore.collection("groups").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -107,18 +108,35 @@ public class Profile extends AppCompatActivity {
                 if(task.isSuccessful()){
                     for(QueryDocumentSnapshot document : task.getResult()){
                         if(document.getId().equals(nameOfGroup)){ //в будующем заменить на уникельный индефекатор
-                            Log.d(TAG, document.getId());
-                            DocumentReference documentReference = fStore.collection("groups").document(nameOfGroup).collection("users").document(User.getUser().getUID());
-                            Map<String, Object> userData = new HashMap<>();
-                            userData.put("UID", User.getUser().getUID());
-                            userData.put("UserType", User.getUser().getType());
-                            documentReference.set(userData);
-                            User.getUser().setUserGroup(nameOfGroup);
-                            Snackbar.make(mainElem, "Группа успешно установлена", Snackbar.LENGTH_LONG).show();
-                            return;
+                            DocumentReference userDoc = fStore.collection("users").document(User.getUser().getUID());
+                            DocumentReference groupDoc = fStore.collection("groups").document(nameOfGroup).collection("groupUsers").document(User.getUser().getUID());
+                            userDoc.update("UserGroup", nameOfGroup).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if(task.isSuccessful()){
+                                        Map<String, Object> userGroupData = new HashMap<>();
+                                        userGroupData.put("UID", User.getUser().getUID());
+                                        userGroupData.put("Type", User.getUser().getType());
+                                        groupDoc.set(userGroupData).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                if(task.isSuccessful()){
+                                                    Snackbar.make(mainElem, "Вы успешно зашли в группу", Snackbar.LENGTH_LONG);
+                                                    User.getUser().setUserGroup(nameOfGroup);
+                                                    showUserData();
+                                                }else{
+                                                    userDoc.update("UserGroup", "");
+                                                    Snackbar.make(mainElem, "Error" + task.getException(), Snackbar.LENGTH_LONG);
+                                                }
+                                            }
+                                        });
+                                    }else{
+                                        Snackbar.make(mainElem, "Error" + task.getException(), Snackbar.LENGTH_LONG);
+                                    }
+                                }
+                            });
                         }
                     }
-                    Snackbar.make(mainElem, "Не существует группы с таким названием", Snackbar.LENGTH_LONG).show();
                 }else{
                     Snackbar.make(mainElem, "Error" + task.getException(), Snackbar.LENGTH_LONG);
                 }
@@ -126,20 +144,7 @@ public class Profile extends AppCompatActivity {
         });
     }
 
-//        Map<String, Object> userData = new HashMap<>();
-//        userData.put("UID", User.getUser().getUID());
-//        userData.put("Type", User.getUser().getType());
-//        documentReference.set(userData).addOnCompleteListener(new OnCompleteListener<Void>() {
-//            @Override
-//            public void onComplete(@NonNull Task<Void> task) {
-//                if(task.isSuccessful()){
-//                    Snackbar.make(mainElem,"Успешно ", Snackbar.LENGTH_LONG).show();
-//                    User.setUserGroup(nameOfGroup);
-//                }else{
-//                    Snackbar.make(mainElem,"Ошибка " + task.getException().getMessage(), Snackbar.LENGTH_LONG).show();
-//                }
-//            }
-//        });
+
 
 
     private void changeActivity() {

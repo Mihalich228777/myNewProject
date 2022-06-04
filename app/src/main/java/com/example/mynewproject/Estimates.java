@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 
@@ -15,6 +16,15 @@ public class Estimates extends AppCompatActivity {
         setContentView(R.layout.activity_estimates);
         changeActivity();
     }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -53,4 +63,6 @@ public class Estimates extends AppCompatActivity {
             }
         });
     }
+
+
 }
